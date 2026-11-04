@@ -1,11 +1,13 @@
 # ret_TweaksLite
 
 World of Warcraft addon for Retail and Forever: a small set of quality-of-life tweaks
-that other addons either lack or bury among too many options. One window, category
-tabs on the left, one checkbox per tweak; changes apply after `/reload`.
+that other addons either lack or bury among too many options. One window: modules
+on the left, each with an enable checkbox; the selected module's tweaks on the right.
+A module turns on or off after `/reload`; its tweaks apply at once.
 Read `docs/VISION.md` before proposing or building features: it defines the scope
 of the next version and records decisions. `docs/ROADMAP.md` shows where the project
-stands and what comes next.
+stands and what comes next. `docs/ARCHITECTURE.md` describes the core and how
+to add a module.
 
 ## Repository layout
 
@@ -34,10 +36,12 @@ stands and what comes next.
 
 - One codebase for Retail and Forever. Guard APIs that differ between clients
   (`C_AddOns and C_AddOns.X or X`).
-- Small files, one tweak per module file. The core (window, saved settings,
-  module registry) knows nothing about specific tweaks; modules register themselves.
+- Small files, one module per file. The core (window, saved settings, module
+  registry) knows nothing about specific modules; modules register themselves.
 - A module's on/off state takes effect only after `/reload`. A disabled module
   creates no frames, registers no events, installs no hooks and runs no OnUpdate.
+- Tweaks inside a running module apply at once and must fully undo themselves
+  when turned off. Anything that cannot be undone belongs in the module's `Start`.
 - Event-driven only: no polling, no timers that re-check state.
 - Persistent game state a module changes (CVars) is restored when the module
   is turned off, even if the client crashed in between.
