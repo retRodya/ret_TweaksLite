@@ -5,5 +5,10 @@
 ## Version: 0.1.0-dev
 ## Category: UI
 ## IconTexture: Interface\Icons\Trade_Engineering
+## SavedVariables: ret_TweaksLiteDB
+## AddonCompartmentFunc: RetTweaksLite_OnAddonCompartmentClick
 
+# core
 Core.lua
+Window.lua
+EntryPoints.lua

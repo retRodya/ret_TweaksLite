@@ -3,9 +3,9 @@
 Small quality-of-life tweaks for World of Warcraft, without the bloat.
 
 ret_TweaksLite collects tweaks that other addons either lack or bury among hundreds
-of options. Each tweak is one checkbox in the addon window, sorted into category
-tabs. A tweak turns on or off after a UI reload, and a tweak you leave off does
-nothing at all.
+of options. Tweaks are grouped into modules. A module turns on or off after a UI
+reload, and a module you leave off does nothing at all. Inside a running module,
+each tweak is one checkbox that applies at once.
 
 The same files work in WoW Retail and WoW Forever.
 
@@ -13,8 +13,9 @@ The same files work in WoW Retail and WoW Forever.
 
 ## Planned for 0.1.0
 
-- **Tooltips — Health bar above tooltip:** shows the unit health bar above
-  the tooltip instead of below it.
+- **Interface → Tooltips**
+  - **Health bar above tooltip:** shows the unit health bar above the tooltip
+    instead of below it.
 
 ## Installation
 
@@ -23,6 +24,12 @@ Copy the `ret_TweaksLite` folder into your client's `Interface/AddOns` folder:
 - Retail: `_retail_/Interface/AddOns/ret_TweaksLite/`
 - Forever: `_forever_/Interface/AddOns/ret_TweaksLite/`
 
-## Commands
+## Usage
 
-- `/rettl` or `/rettweakslite` — show the addon version.
+1. Open the addon window with `/rettl` or `/rettweakslite`, from the Addon
+   Compartment, or from Settings → AddOns → ret_TweaksLite.
+2. Tick the checkbox next to a module and reload the UI.
+3. Select the module and tick the tweaks you want. They apply at once.
+
+Modules and tweaks are off by default. An undo button next to a module or tweak
+marks what you changed since the last reload; click it to set the change back.
