@@ -9,6 +9,7 @@
   Health bar above tooltip.
 - [ ] **2. Каркас репозитория** — папка аддона, `CHANGELOG.md`, `README.md`,
   `docs/DEVELOPMENT.md`, `.gitattributes`, `.editorconfig`.
+  - [x] Файлы каркаса.
   - [ ] Подключить аддон к Retail и Forever через junction, как в ret_ImmersiveScreen,
     и проверить, что `/rettl` печатает версию.
   - [ ] Сверить `## Interface` в `.toc` с `/dump select(4, GetBuildInfo())`
