@@ -12,3 +12,6 @@
 Core.lua
 Window.lua
 EntryPoints.lua
+
+# modules
+Modules\Tooltips.lua
