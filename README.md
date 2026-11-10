@@ -16,6 +16,10 @@ The same files work in WoW Retail and WoW Forever.
 - **Interface → Tooltips**
   - **Health bar above tooltip:** shows the unit health bar above the tooltip
     instead of below it.
+- **Interface → Nameplates**
+  - **Enemy player names in red:** colors the names of enemy players you can
+    attack red on their nameplates. Useful when health bars are class-colored
+    and an enemy mage looks like a caster NPC.
 
 ## Installation
 
