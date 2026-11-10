@@ -7,19 +7,24 @@ local _, ns = ...
 -- Blizzard colors a nameplate's name in CompactUnitFrame_UpdateName
 -- (Blizzard_UnitFrame/Shared/CompactUnitFrame.lua) with frame.name:SetVertexColor.
 -- A post-hook recolors the name after every Blizzard update. Shared with the Debug
--- module, which tests the same code on enemy NPCs.
+-- module, which tests the same code on NPCs.
 local NameplateNames = {}
 ns.NameplateNames = NameplateNames
 
--- Blizzard's own hostile name color.
-local RED_R, RED_G, RED_B = 1, 0, 0
-
--- Active rules: rule -> true. A rule is function(unit) that returns true
--- when the unit's name should be red.
+-- Active rules: rule -> true. A rule is function(unit) that returns the name's
+-- color r, g, b, or nothing to leave the name as Blizzard colored it.
 local rules = {}
 -- The color Blizzard gave a name before it was recolored, to restore it.
 local originalColors = setmetatable({}, { __mode = "k" })
 local hooked = false
+
+-- The game's reaction color: the one Blizzard uses for the selection circle and,
+-- with extended colors, for the names on Legacy-style nameplates.
+-- UnitSelectionColor returns plain values, not secret ones.
+function NameplateNames.GetReactionColor(unit)
+    local r, g, b = UnitSelectionColor(unit, true)
+    return r, g, b
+end
 
 local function IsNameplateUnitFrame(frame)
     if frame:IsForbidden() or not frame.name then
@@ -29,36 +34,54 @@ local function IsNameplateUnitFrame(frame)
     return type(unit) == "string" and unit:find("^nameplate") ~= nil
 end
 
-local function ShouldColor(unit)
+local function GetRuleColor(unit)
     for rule in pairs(rules) do
-        if rule(unit) then
-            return true
+        local r, g, b = rule(unit)
+        if r then
+            return r, g, b
         end
     end
-    return false
 end
 
 local function ApplyColor(frame)
     local name = frame.name
     local original = originalColors[name]
-    if ShouldColor(frame.unit) then
+    local r, g, b = GetRuleColor(frame.unit)
+    if r then
         if not original then
             originalColors[name] = { name:GetVertexColor() }
         end
-        name:SetVertexColor(RED_R, RED_G, RED_B)
+        name:SetVertexColor(r, g, b)
     elseif original then
         name:SetVertexColor(unpack(original))
         originalColors[name] = nil
     end
 end
 
+-- The Classic nameplate style highlights the name under the mouse with
+-- optionTable.nameMouseoverColor, and that highlight stays. It is recognized
+-- by its color: UnitIsUnit(unit, "mouseover") can return a secret value.
+local function HasMouseoverHighlight(frame)
+    local color = frame.optionTable and frame.optionTable.nameMouseoverColor
+    if not color then
+        return false
+    end
+    local r, g, b = frame.name:GetVertexColor()
+    return math.abs(r - color.r) < 0.01 and math.abs(g - color.g) < 0.01 and math.abs(b - color.b) < 0.01
+end
+
 -- Runs after Blizzard has set the name's color, which makes any stored color stale.
--- CompactUnitFrame_UpdateName also serves raid and party frames; they are skipped.
+-- Blizzard also calls CompactUnitFrame_UpdateName on UNIT_FACTION, so a player who
+-- becomes attackable gets the new reaction color at once.
+-- The function also serves raid and party frames; they are skipped.
 local function OnUpdateName(frame)
     if not IsNameplateUnitFrame(frame) then
         return
     end
     originalColors[frame.name] = nil
+    if HasMouseoverHighlight(frame) then
+        return
+    end
     ApplyColor(frame)
 end
 
@@ -91,10 +114,12 @@ end
 -- Module
 --------------------------------------------------------------------------------
 
--- UnitIsPlayer and UnitCanAttack return plain booleans, not secret values,
--- so this works in combat too.
-local function IsEnemyPlayer(unit)
-    return UnitIsPlayer(unit) and UnitCanAttack("player", unit)
+-- Players who are not friendly: enemy faction, PvP-flagged or not.
+-- UnitIsPlayer and UnitIsFriend return plain values, so this works in combat too.
+local function EnemyPlayerColor(unit)
+    if UnitIsPlayer(unit) and not UnitIsFriend("player", unit) then
+        return NameplateNames.GetReactionColor(unit)
+    end
 end
 
 ns.RegisterModule({
@@ -107,12 +132,13 @@ ns.RegisterModule({
     end,
     tweaks = {
         {
-            key = "EnemyPlayerNamesRed",
-            title = "Enemy player names in red",
-            description = "Colors the names of enemy players you can attack red, so they stand out "
-                .. "from NPCs whose health bars share a class color.",
+            key = "EnemyPlayerNamesReactionColor",
+            title = "Enemy player names in reaction color",
+            description = "Colors the names of enemy players with the game's reaction color, "
+                .. "the same as their selection circle: red means you can attack them. "
+                .. "Tells them apart from NPCs whose health bars share a class color.",
             Apply = function(enabled)
-                NameplateNames.SetRule(IsEnemyPlayer, enabled)
+                NameplateNames.SetRule(EnemyPlayerColor, enabled)
             end,
         },
     },

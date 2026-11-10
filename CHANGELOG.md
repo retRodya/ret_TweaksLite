@@ -20,7 +20,9 @@ and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the Addon Compartment and from the addon's page in Settings → AddOns.
 - **Interface → Tooltips** module with the **Health bar above tooltip** tweak:
   shows the unit health bar above the tooltip instead of below it.
-- **Interface → Nameplates** module with the **Enemy player names in red** tweak:
-  colors the names of enemy players you can attack red on their nameplates.
+- **Interface → Nameplates** module with the **Enemy player names in reaction color**
+  tweak: colors the names of enemy players on their nameplates with the game's
+  reaction color, the same as their selection circle (red means you can attack them).
 - **Developer → Debug** module with test versions of hard-to-reach tweaks.
-  **Enemy NPC names in red** checks the nameplate name coloring without PvP.
+  **Enemy NPC names in reaction color** checks the nameplate name coloring
+  without PvP.
