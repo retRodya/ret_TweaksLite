@@ -149,6 +149,10 @@ ret_TweaksLiteDB = {
   и `GameFontNormal`. Подсветка при наведении проверяется через `IsMouseOver()`,
   а не флагом из `OnEnter` и `OnLeave`: когда мышь переходит на чекбокс внутри
   строки, строка получает `OnLeave`, хотя курсор всё ещё над ней.
+- Исходники клиента Forever (1.60.1, `## Interface: 16001`) лежат в ветке `forever`
+  репозитория Gethe/wow-ui-source, Retail — в ветке `live`. Шаблоны окна
+  (`ButtonFrameTemplate_HidePortrait`, `MinimalCheckboxTemplate`, `SetTitle`,
+  `RELOADUI`) есть в обоих.
 - Кнопка «+/−» у группы — те же текстуры, что в списке Settings:
   `Interface\Buttons\UI-PlusButton-*` и `UI-MinusButton-*`.
 - Кнопка отката — атлас `common-icon-undo`, им же помечена кнопка Undo
