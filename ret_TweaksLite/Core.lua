@@ -82,8 +82,12 @@ end
 --   key         unique within the module, also the key in saved settings
 --   title       name next to the tweak's checkbox
 --   description tooltip text of the tweak's checkbox
---   Apply       function(enabled); takes effect at once, so it must be able
---               to undo itself. Called with true after login if the tweak is on.
+--   parent      optional key of an earlier tweak in the same module. The child
+--               is shown only while the parent is checked and works only while
+--               the parent works.
+--   Apply       function(active); takes effect at once, so it must be able to
+--               undo itself. Called whenever the tweak starts or stops working,
+--               including with true after login.
 function ns.RegisterModule(module)
     assert(type(module.key) == "string", "module.key is required")
     assert(not modules[module.key], "module already registered: " .. module.key)
@@ -91,12 +95,17 @@ function ns.RegisterModule(module)
     assert(type(module.title) == "string", "module.title is required")
     assert(type(module.description) == "string", "module.description is required")
     assert(type(module.tweaks) == "table", "module.tweaks is required")
+    local seen = {}
     for _, tweak in ipairs(module.tweaks) do
         assert(type(tweak.key) == "string", "tweak.key is required")
+        assert(not seen[tweak.key], "tweak already registered: " .. tweak.key)
         assert(type(tweak.title) == "string", "tweak.title is required")
         assert(type(tweak.description) == "string", "tweak.description is required")
         assert(type(tweak.Apply) == "function", "tweak.Apply is required")
+        assert(tweak.parent == nil or seen[tweak.parent], "tweak.parent must be an earlier tweak")
+        seen[tweak.key] = tweak
     end
+    module.tweaksByKey = seen
 
     modules[module.key] = module
     table.insert(ns.moduleList, module)
@@ -120,14 +129,47 @@ local function GetTweakData(moduleKey)
 end
 
 -- Tweaks are off by default and apply at once, without /reload.
+-- "Enabled" is the checkbox; "active" means the tweak actually works:
+-- it is enabled and so is every parent above it.
 function ns.IsTweakEnabled(moduleKey, tweakKey)
     return GetTweakData(moduleKey)[tweakKey] == true
 end
 
+local function IsTweakActive(module, tweak)
+    if not ns.IsTweakEnabled(module.key, tweak.key) then
+        return false
+    end
+    if tweak.parent then
+        return IsTweakActive(module, module.tweaksByKey[tweak.parent])
+    end
+    return true
+end
+
+-- Turning a parent on or off can start or stop its children too. Tweaks that
+-- stop are told first, children before parents; then the ones that start,
+-- parents before children.
 function ns.SetTweakEnabled(moduleKey, tweak, enabled)
+    local module = modules[moduleKey]
+    local wasActive = {}
+    for index, other in ipairs(module.tweaks) do
+        wasActive[index] = IsTweakActive(module, other)
+    end
+
     GetTweakData(moduleKey)[tweak.key] = enabled
-    if ns.IsRunning(moduleKey) then
-        SafeCall(tweak.Apply, enabled)
+    if not ns.IsRunning(moduleKey) then
+        return
+    end
+
+    for index = #module.tweaks, 1, -1 do
+        local other = module.tweaks[index]
+        if wasActive[index] and not IsTweakActive(module, other) then
+            SafeCall(other.Apply, false)
+        end
+    end
+    for index, other in ipairs(module.tweaks) do
+        if not wasActive[index] and IsTweakActive(module, other) then
+            SafeCall(other.Apply, true)
+        end
     end
 end
 
@@ -194,7 +236,7 @@ local function StartModules()
                 SafeCall(module.Start, module)
             end
             for _, tweak in ipairs(module.tweaks) do
-                if ns.IsTweakEnabled(module.key, tweak.key) then
+                if IsTweakActive(module, tweak) then
                     SafeCall(tweak.Apply, true)
                 end
             end

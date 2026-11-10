@@ -4,6 +4,7 @@ local WIDTH, HEIGHT = 560, 400
 local LIST_WIDTH = 170
 local ENTRY_HEIGHT = 22
 local TWEAK_HEIGHT = 28
+local TWEAK_INDENT = 24
 
 -- Offsets of ButtonFrameTemplate's inset: title bar on top, button bar at the bottom.
 local INSET_LEFT, INSET_RIGHT, INSET_TOP, INSET_BOTTOM = 4, -6, -24, 26
@@ -170,10 +171,9 @@ local function CreateGroupPage(parent, category, modules)
     return page
 end
 
-local function CreateTweakRow(parent, module, tweak, index)
+local function CreateTweakRow(parent, module, tweak)
     local checkbox = CreateFrame("CheckButton", nil, parent, CHECKBOX_TEMPLATE)
     checkbox:SetSize(24, 24)
-    checkbox:SetPoint("TOPLEFT", 0, -(index - 1) * TWEAK_HEIGHT)
 
     local label = checkbox:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
@@ -192,7 +192,8 @@ local function CreateTweakRow(parent, module, tweak, index)
     end)
     checkbox:SetScript("OnLeave", GameTooltip_Hide)
 
-    local undo = CreateUndoButton(parent)
+    -- A child of the checkbox, so it hides together with a hidden child tweak.
+    local undo = CreateUndoButton(checkbox)
     undo:SetPoint("LEFT", label, "RIGHT", 6, 0)
     undo:SetScript("OnClick", function()
         ns.UndoTweak(module.key, tweak)
@@ -200,11 +201,33 @@ local function CreateTweakRow(parent, module, tweak, index)
     end)
 
     return {
+        tweak = tweak,
+        checkbox = checkbox,
         Update = function()
             checkbox:SetChecked(ns.IsTweakEnabled(module.key, tweak.key))
             undo:SetShown(ns.IsTweakChanged(module.key, tweak.key))
         end,
     }
+end
+
+-- A child tweak sits under its parent, indented, and only while the parent is
+-- checked; the rows below move up when it is hidden.
+local function LayoutTweakRows(module, rows)
+    local depth = {}
+    local y = 0
+    for _, row in ipairs(rows) do
+        local tweak = row.tweak
+        local parentDepth = tweak.parent and depth[tweak.parent]
+        local visible = tweak.parent == nil
+            or (parentDepth ~= nil and ns.IsTweakEnabled(module.key, tweak.parent))
+        row.checkbox:SetShown(visible)
+        if visible then
+            depth[tweak.key] = parentDepth and parentDepth + 1 or 0
+            row.checkbox:ClearAllPoints()
+            row.checkbox:SetPoint("TOPLEFT", depth[tweak.key] * TWEAK_INDENT, y)
+            y = y - TWEAK_HEIGHT
+        end
+    end
 end
 
 -- The page shows the module's tweaks only while it runs. Otherwise it tells
@@ -222,8 +245,8 @@ local function CreateModulePage(parent, module)
     tweaks:SetPoint("BOTTOMRIGHT", -16, 16)
 
     local rows = {}
-    for index, tweak in ipairs(module.tweaks) do
-        table.insert(rows, CreateTweakRow(tweaks, module, tweak, index))
+    for _, tweak in ipairs(module.tweaks) do
+        table.insert(rows, CreateTweakRow(tweaks, module, tweak))
     end
 
     function page:Update()
@@ -243,6 +266,7 @@ local function CreateModulePage(parent, module)
         for _, row in ipairs(rows) do
             row.Update()
         end
+        LayoutTweakRows(module, rows)
     end
 
     return page
