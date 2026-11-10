@@ -17,7 +17,10 @@
     пока не найдётся обратное.
 - [ ] **3. Бэклог в GitHub Issues** — метки `bug`, `feature`, `idea`,
   `needs-ingame-test`; milestone `v0.1.0`; задачи из VISION.md.
-  Первая задача с меткой `needs-ingame-test` — проверить `## Interface` в Forever.
+  Первые задачи с меткой `needs-ingame-test`:
+  - проверить `## Interface` в Forever;
+  - проверить Enemy player names in red в PvP (поле боя, арена или War Mode).
+
   Отложено: нужен GitHub CLI (`gh`), он пока не установлен.
 - [x] **4. Архитектура ядра** — реестр модулей и твиков, окно с группами модулей
   и рабочей областью, кнопки отката, SavedVariables с версией схемы и миграциями,
@@ -28,6 +31,9 @@
   Дальше по той же схеме: один модуль — одна ветка и PR — запись в CHANGELOG.
   - [x] Код модуля Tooltips с твиком Health bar above tooltip.
   - [x] Проверка в игре (Retail).
+  - [x] Код модуля Nameplates с твиком Enemy player names in red и тест в Debug.
+  - [x] Проверка теста Debug в игре (Retail). Проверка в PvP — задача выше.
+  - [ ] Решить, попадёт ли модуль Debug в релиз.
   - [ ] Тег и релиз.
 
 ## Инструменты (по мере надобности)
