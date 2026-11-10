@@ -25,7 +25,9 @@ and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   reaction color, the same as their selection circle (red means you can attack them).
 - **Interface → Unit Frames** module with the **Player names in class color** tweak:
   colors the names of players, allies and enemies, on the target, target of target
-  and focus frames in their class color.
+  and focus frames in their class color. The **Name background on target of target**
+  tweak gives the target of target frame the reaction-colored name background
+  the target frame has.
 - **Developer → Debug** module with test versions of hard-to-reach tweaks.
   **Enemy NPC names in reaction color** checks the nameplate name coloring
   without PvP.

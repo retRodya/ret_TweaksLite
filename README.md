@@ -24,6 +24,8 @@ The same files work in WoW Retail and WoW Forever.
 - **Interface → Unit Frames**
   - **Player names in class color:** colors the names of players, allies and
     enemies, on the target, target of target and focus frames in their class color.
+  - **Name background on target of target:** gives the target of target frame
+    the reaction-colored name background the target frame has.
 
 ## Installation
 
