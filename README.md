@@ -21,6 +21,9 @@ The same files work in WoW Retail and WoW Forever.
     on their nameplates with the game's reaction color, the same as their
     selection circle; red means you can attack them. Useful when health bars
     are class-colored and an enemy mage looks like a caster NPC.
+- **Interface → Unit Frames**
+  - **Player names in class color:** colors the names of players, allies and
+    enemies, on the target, target of target and focus frames in their class color.
 
 ## Installation
 

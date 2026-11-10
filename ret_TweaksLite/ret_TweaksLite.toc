@@ -16,4 +16,5 @@ EntryPoints.lua
 # modules; groups appear in the window in this order
 Modules\Tooltips.lua
 Modules\Nameplates.lua
+Modules\UnitFrames.lua
 Modules\Debug.lua
