@@ -22,3 +22,5 @@ and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   shows the unit health bar above the tooltip instead of below it.
 - **Interface → Nameplates** module with the **Enemy player names in red** tweak:
   colors the names of enemy players you can attack red on their nameplates.
+- **Developer → Debug** module with test versions of hard-to-reach tweaks.
+  **Enemy NPC names in red** checks the nameplate name coloring without PvP.

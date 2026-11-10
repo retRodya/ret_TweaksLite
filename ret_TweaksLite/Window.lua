@@ -362,7 +362,8 @@ end
 -- Window
 --------------------------------------------------------------------------------
 
--- Groups and the modules in each, both sorted by name.
+-- Groups in the order their first module loads (file order in the .toc),
+-- so a group like Developer can stay at the bottom; modules in a group by name.
 local function GetGroups()
     local categories, modulesByCategory = {}, {}
     for _, module in ipairs(ns.moduleList) do
@@ -374,7 +375,6 @@ local function GetGroups()
         end
         table.insert(list, module)
     end
-    table.sort(categories)
     for _, list in pairs(modulesByCategory) do
         table.sort(list, function(a, b)
             return a.title < b.title
