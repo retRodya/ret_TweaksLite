@@ -16,6 +16,11 @@ The same files work in WoW Retail and WoW Forever.
 - **Interface → Tooltips**
   - **Health bar above tooltip:** shows the unit health bar above the tooltip
     instead of below it.
+  - **Show auras:** shows the buffs you can cast that are on the unit, above
+    its tooltip. Yours come first and are larger, as on the target frame, so you
+    see at a glance which of your buffs the unit still lacks. Each icon darkens
+    clockwise as its buff runs out. Settings: icon size for others' buffs and
+    for your own.
 - **Interface → Nameplates**
   - **Enemy player names in reaction color:** colors the names of enemy players
     on their nameplates with the game's reaction color, the same as their

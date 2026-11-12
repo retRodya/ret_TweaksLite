@@ -22,6 +22,11 @@ and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with an undo button like everything else.
 - **Interface → Tooltips** module with the **Health bar above tooltip** tweak:
   shows the unit health bar above the tooltip instead of below it.
+  The **Show auras** tweak shows the buffs you can cast that are on the unit,
+  above its tooltip: yours first and larger, then the same buffs from other
+  players. Each icon darkens clockwise as its buff runs out, as on the target
+  frame. It sits above the health bar when that is above the tooltip too.
+  Its settings are the icon size for others' buffs and for your own.
 - **Interface → Nameplates** module with the **Enemy player names in reaction color**
   tweak: colors the names of enemy players on their nameplates with the game's
   reaction color, the same as their selection circle (red means you can attack them).
