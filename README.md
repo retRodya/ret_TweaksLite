@@ -40,6 +40,8 @@ Copy the `ret_TweaksLite` folder into your client's `Interface/AddOns` folder:
    Compartment, or from Settings → AddOns → ret_TweaksLite.
 2. Tick the checkbox next to a module and reload the UI.
 3. Select the module and tick the tweaks you want. They apply at once.
+   Some tweaks have settings, which appear under them while they are ticked.
 
-Modules and tweaks are off by default. An undo button next to a module or tweak
-marks what you changed since the last reload; click it to set the change back.
+Modules and tweaks are off by default. An undo button next to a module, tweak
+or setting marks what you changed since the last reload; click it to set
+the change back.

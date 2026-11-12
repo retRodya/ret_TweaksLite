@@ -58,8 +58,10 @@ ns.moduleList = {}
 
 local modules = {}
 local running = {}
--- Tweak values as they were when the UI loaded: loadedTweaks[moduleKey][tweakKey].
+-- Values as they were when the UI loaded, for undo:
+-- loadedTweaks[moduleKey][tweakKey] and loadedSettings[moduleKey][tweakKey][settingKey].
 local loadedTweaks = {}
+local loadedSettings = {}
 
 -- One broken module or tweak must not stop the others: errors go to the
 -- error handler (BugSack) and the caller carries on.
@@ -88,6 +90,37 @@ end
 --   Apply       function(active); takes effect at once, so it must be able to
 --               undo itself. Called whenever the tweak starts or stops working,
 --               including with true after login.
+--   settings    optional list of values that refine the tweak, shown as sliders
+--               under it while it is checked
+--
+-- A setting is a table with:
+--   key         unique within the tweak, also the key in saved settings
+--   title       name next to the slider
+--   description tooltip text of the slider
+--   min, max    range of the value
+--   step        optional, 1 by default
+--   default     value until the player moves the slider
+-- The tweak reads a setting with ns.GetSetting whenever it uses it, so a new
+-- value takes effect the next time the tweak draws something.
+local function RegisterSettings(tweak)
+    local seen = {}
+    for _, setting in ipairs(tweak.settings or {}) do
+        assert(type(setting.key) == "string", "setting.key is required")
+        assert(not seen[setting.key], "setting already registered: " .. setting.key)
+        assert(type(setting.title) == "string", "setting.title is required")
+        assert(type(setting.description) == "string", "setting.description is required")
+        assert(type(setting.min) == "number" and type(setting.max) == "number", "setting.min and max are required")
+        assert(setting.min < setting.max, "setting.min must be below setting.max")
+        assert(setting.step == nil or (type(setting.step) == "number" and setting.step > 0), "setting.step must be positive")
+        assert(type(setting.default) == "number", "setting.default is required")
+        assert(setting.default >= setting.min and setting.default <= setting.max, "setting.default is out of range")
+        setting.step = setting.step or 1
+        seen[setting.key] = setting
+    end
+    tweak.settings = tweak.settings or {}
+    tweak.settingsByKey = seen
+end
+
 function ns.RegisterModule(module)
     assert(type(module.key) == "string", "module.key is required")
     assert(not modules[module.key], "module already registered: " .. module.key)
@@ -103,6 +136,7 @@ function ns.RegisterModule(module)
         assert(type(tweak.description) == "string", "tweak.description is required")
         assert(type(tweak.Apply) == "function", "tweak.Apply is required")
         assert(tweak.parent == nil or seen[tweak.parent], "tweak.parent must be an earlier tweak")
+        RegisterSettings(tweak)
         seen[tweak.key] = tweak
     end
     module.tweaksByKey = seen
@@ -205,13 +239,63 @@ function ns.UndoTweak(moduleKey, tweak)
     ns.SetTweakEnabled(moduleKey, tweak, loadedTweaks[moduleKey][tweak.key])
 end
 
-local function RememberLoadedTweaks()
+--------------------------------------------------------------------------------
+-- Tweak settings
+--------------------------------------------------------------------------------
+
+local function GetSettingData(moduleKey, tweakKey)
+    local data = GetModuleData(moduleKey)
+    if type(data.settings) ~= "table" then
+        data.settings = {}
+    end
+    local values = data.settings[tweakKey]
+    if type(values) ~= "table" then
+        values = {}
+        data.settings[tweakKey] = values
+    end
+    return values
+end
+
+local function GetSettingInfo(moduleKey, tweakKey, settingKey)
+    return modules[moduleKey].tweaksByKey[tweakKey].settingsByKey[settingKey]
+end
+
+-- A saved value that is missing or out of range counts as the default.
+function ns.GetSetting(moduleKey, tweakKey, settingKey)
+    local setting = GetSettingInfo(moduleKey, tweakKey, settingKey)
+    local value = GetSettingData(moduleKey, tweakKey)[settingKey]
+    if type(value) ~= "number" or value < setting.min or value > setting.max then
+        return setting.default
+    end
+    return value
+end
+
+function ns.SetSetting(moduleKey, tweakKey, settingKey, value)
+    local setting = GetSettingInfo(moduleKey, tweakKey, settingKey)
+    GetSettingData(moduleKey, tweakKey)[settingKey] = math.min(math.max(value, setting.min), setting.max)
+end
+
+function ns.IsSettingChanged(moduleKey, tweakKey, settingKey)
+    return ns.GetSetting(moduleKey, tweakKey, settingKey) ~= loadedSettings[moduleKey][tweakKey][settingKey]
+end
+
+function ns.UndoSetting(moduleKey, tweakKey, settingKey)
+    ns.SetSetting(moduleKey, tweakKey, settingKey, loadedSettings[moduleKey][tweakKey][settingKey])
+end
+
+local function RememberLoadedValues()
     for _, module in ipairs(ns.moduleList) do
-        local values = {}
+        local tweaks, settings = {}, {}
         for _, tweak in ipairs(module.tweaks) do
-            values[tweak.key] = ns.IsTweakEnabled(module.key, tweak.key)
+            tweaks[tweak.key] = ns.IsTweakEnabled(module.key, tweak.key)
+            local values = {}
+            for _, setting in ipairs(tweak.settings) do
+                values[setting.key] = ns.GetSetting(module.key, tweak.key, setting.key)
+            end
+            settings[tweak.key] = values
         end
-        loadedTweaks[module.key] = values
+        loadedTweaks[module.key] = tweaks
+        loadedSettings[module.key] = settings
     end
 end
 
@@ -255,7 +339,7 @@ events:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" and name == addonName then
         self:UnregisterEvent("ADDON_LOADED")
         db = LoadDatabase()
-        RememberLoadedTweaks()
+        RememberLoadedValues()
     elseif event == "PLAYER_LOGIN" then
         self:UnregisterEvent("PLAYER_LOGIN")
         StartModules()

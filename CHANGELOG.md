@@ -18,6 +18,8 @@ and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   shows what you changed and sets it back with one click.
 - `/rettl` and `/rettweakslite` open the window. It also opens from
   the Addon Compartment and from the addon's page in Settings → AddOns.
+- Tweaks can have settings: sliders under the tweak, shown while it is checked,
+  with an undo button like everything else.
 - **Interface → Tooltips** module with the **Health bar above tooltip** tweak:
   shows the unit health bar above the tooltip instead of below it.
 - **Interface → Nameplates** module with the **Enemy player names in reaction color**

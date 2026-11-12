@@ -6,6 +6,10 @@ local ENTRY_HEIGHT = 22
 local TWEAK_HEIGHT = 28
 local TWEAK_INDENT = 24
 
+-- A setting row: name, then the slider with its value on the right.
+local SETTING_LABEL_X, SETTING_LABEL_WIDTH = 4, 106
+local SLIDER_WIDTH, SLIDER_HEIGHT = 160, 24
+
 -- Offsets of ButtonFrameTemplate's inset: title bar on top, button bar at the bottom.
 local INSET_LEFT, INSET_RIGHT, INSET_TOP, INSET_BOTTOM = 4, -6, -24, 26
 
@@ -201,8 +205,9 @@ local function CreateTweakRow(parent, module, tweak)
     end)
 
     return {
-        tweak = tweak,
-        checkbox = checkbox,
+        frame = checkbox,
+        key = tweak.key,
+        parent = tweak.parent,
         Update = function()
             checkbox:SetChecked(ns.IsTweakEnabled(module.key, tweak.key))
             undo:SetShown(ns.IsTweakChanged(module.key, tweak.key))
@@ -210,21 +215,83 @@ local function CreateTweakRow(parent, module, tweak)
     }
 end
 
--- A child tweak sits under its parent, indented, and only while the parent is
--- checked; the rows below move up when it is hidden.
+-- Same slider as in the game's Settings panel.
+local function CreateSettingRow(parent, module, tweak, setting)
+    local row = CreateFrame("Frame", nil, parent)
+    row:SetSize(SETTING_LABEL_X + SETTING_LABEL_WIDTH + SLIDER_WIDTH, SLIDER_HEIGHT)
+
+    local label = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    label:SetPoint("LEFT", SETTING_LABEL_X, 0)
+    label:SetWidth(SETTING_LABEL_WIDTH)
+    label:SetJustifyH("LEFT")
+    label:SetWordWrap(false)
+    label:SetText(setting.title)
+
+    local function GetValue()
+        return ns.GetSetting(module.key, tweak.key, setting.key)
+    end
+
+    local slider = CreateFrame("Frame", nil, row, "MinimalSliderWithSteppersTemplate")
+    slider:SetSize(SLIDER_WIDTH, SLIDER_HEIGHT)
+    slider:SetPoint("LEFT", label, "RIGHT", 0, 0)
+    local steps = math.floor((setting.max - setting.min) / setting.step + 0.5)
+    slider:Init(GetValue(), setting.min, setting.max, steps, {
+        [MinimalSliderWithSteppersMixin.Label.Right] = function(value)
+            return tostring(math.floor(value + 0.5))
+        end,
+    })
+    -- The slider also reports values set from code; only the player's moves count.
+    slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
+        value = setting.min + math.floor((value - setting.min) / setting.step + 0.5) * setting.step
+        if value ~= GetValue() then
+            ns.SetSetting(module.key, tweak.key, setting.key, value)
+            Refresh()
+        end
+    end, row)
+
+    local function OnEnter()
+        ShowTooltip(row, setting.title, setting.description)
+    end
+    row:EnableMouse(true)
+    row:SetScript("OnEnter", OnEnter)
+    row:SetScript("OnLeave", GameTooltip_Hide)
+    slider.Slider:HookScript("OnEnter", OnEnter)
+    slider.Slider:HookScript("OnLeave", GameTooltip_Hide)
+
+    local undo = CreateUndoButton(row)
+    undo:SetPoint("LEFT", slider.RightText, "RIGHT", 6, 0)
+    undo:SetScript("OnClick", function()
+        ns.UndoSetting(module.key, tweak.key, setting.key)
+        Refresh()
+    end)
+
+    return {
+        frame = row,
+        parent = tweak.key,
+        Update = function()
+            slider:SetValue(GetValue())
+            undo:SetShown(ns.IsSettingChanged(module.key, tweak.key, setting.key))
+        end,
+    }
+end
+
+-- A child tweak or a setting sits under its tweak, indented, and only while that
+-- tweak is checked; the rows below move up when it is hidden.
 local function LayoutTweakRows(module, rows)
     local depth = {}
     local y = 0
     for _, row in ipairs(rows) do
-        local tweak = row.tweak
-        local parentDepth = tweak.parent and depth[tweak.parent]
-        local visible = tweak.parent == nil
-            or (parentDepth ~= nil and ns.IsTweakEnabled(module.key, tweak.parent))
-        row.checkbox:SetShown(visible)
+        local parentDepth = row.parent and depth[row.parent]
+        local visible = row.parent == nil
+            or (parentDepth ~= nil and ns.IsTweakEnabled(module.key, row.parent))
+        row.frame:SetShown(visible)
         if visible then
-            depth[tweak.key] = parentDepth and parentDepth + 1 or 0
-            row.checkbox:ClearAllPoints()
-            row.checkbox:SetPoint("TOPLEFT", depth[tweak.key] * TWEAK_INDENT, y)
+            local rowDepth = parentDepth and parentDepth + 1 or 0
+            if row.key then
+                depth[row.key] = rowDepth
+            end
+            row.frame:ClearAllPoints()
+            row.frame:SetPoint("TOPLEFT", rowDepth * TWEAK_INDENT, y)
             y = y - TWEAK_HEIGHT
         end
     end
@@ -247,6 +314,9 @@ local function CreateModulePage(parent, module)
     local rows = {}
     for _, tweak in ipairs(module.tweaks) do
         table.insert(rows, CreateTweakRow(tweaks, module, tweak))
+        for _, setting in ipairs(tweak.settings) do
+            table.insert(rows, CreateSettingRow(tweaks, module, tweak, setting))
+        end
     end
 
     function page:Update()

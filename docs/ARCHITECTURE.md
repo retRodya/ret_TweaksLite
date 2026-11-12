@@ -10,7 +10,7 @@
 | Файл | Что делает |
 | --- | --- |
 | `Core.lua` | Метаданные из `.toc`, сохранённые настройки, реестр модулей, запуск включённых модулей и твиков. |
-| `Window.lua` | Окно: список слева (General, группы, модули с чекбоксами), рабочая область справа, кнопки отката, кнопка Reload UI. |
+| `Window.lua` | Окно: список слева (General, группы, модули с чекбоксами), рабочая область справа (твики чекбоксами, их настройки ползунками), кнопки отката, кнопка Reload UI. |
 | `EntryPoints.lua` | Как открыть окно: `/rettl`, `/rettweakslite`, Addon Compartment, страница в Settings → AddOns. |
 | `Modules/<Module>.lua` | Один модуль и его твики. Ядро о нём ничего не знает: модуль сам регистрируется. Сейчас: `Tooltips`, `Nameplates`, `UnitFrames`, `Debug`. |
 
@@ -36,6 +36,21 @@ ns.RegisterModule({
             title = "Health bar above tooltip",
             description = "Shows the unit health bar above the tooltip instead of below it.",
             Apply = function(enabled) end,
+        },
+        {
+            key = "ShowAuras",
+            title = "Show auras",
+            description = "...",
+            Apply = function(enabled) end,
+            settings = {                -- необязательно: ползунки под твиком
+                {
+                    key = "AuraSize",   -- уникальный в твике, ключ в настройках
+                    title = "Aura size",
+                    description = "...",
+                    min = 10, max = 40, -- step = 1 по умолчанию
+                    default = 17,
+                },
+            },
         },
     },
 })
@@ -66,6 +81,20 @@ ns.RegisterModule({
   перестал работать, от детей к родителям, потом у тех, кто начал, от родителей
   к детям. Поэтому модуль может считать: если работает дочерний твик, родитель
   уже работает.
+
+### Настройки твика
+
+Поле `settings` — список числовых значений, которые уточняют твик. Окно рисует
+каждое ползунком под твиком, с тем же отступом и по тому же правилу видимости,
+что у дочернего твика: пока твик отмечен.
+
+- Твик читает значение через `ns.GetSetting(moduleKey, tweakKey, settingKey)`
+  каждый раз, когда рисует. Отдельного «применить настройку» нет: новое значение
+  действует со следующей отрисовки. Если твику понадобится применять значение
+  сразу (например, CVar), контракт расширится вместе с ним.
+- Сохранённое значение вне диапазона `min`–`max` или не число считается
+  значением по умолчанию: так настройки переживают смену диапазона без миграции.
+- `ns.SetSetting` прижимает значение к диапазону.
 
 Чтобы добавить модуль: создать `Modules/<Module>.lua`, вписать его в `.toc`
 после файлов ядра и перезапустить клиент — новый файл `/reload` не подхватывает.
@@ -113,11 +142,12 @@ General всегда первым, дальше группы в порядке �
 - модуль — `ns.IsPending(key)`, откат `ns.UndoModule(key)` возвращает галочку
   к `ns.IsRunning(key)`;
 - твик — `ns.IsTweakChanged(moduleKey, tweakKey)`, откат `ns.UndoTweak(moduleKey, tweak)`
-  возвращает значение из снимка и сразу применяет его через `Apply`.
+  возвращает значение из снимка и сразу применяет его через `Apply`;
+- настройка — `ns.IsSettingChanged(moduleKey, tweakKey, settingKey)`, откат
+  `ns.UndoSetting(moduleKey, tweakKey, settingKey)` возвращает значение из снимка.
 
-Снимок твиков делается в `ADDON_LOADED`, сразу после загрузки настроек.
-Будущие настройки твиков (не только галочки) должны работать так же:
-снимок при загрузке, сравнение, откат к снимку.
+Снимок твиков и настроек делается в `ADDON_LOADED`, сразу после загрузки
+сохранённых данных.
 
 ## Запуск
 
@@ -139,7 +169,8 @@ ret_TweaksLiteDB = {
     modules = {
         Tooltips = {
             enabled = true,
-            tweaks = { HealthBarAboveTooltip = true },
+            tweaks = { HealthBarAboveTooltip = true, ShowAuras = true },
+            settings = { ShowAuras = { AuraSize = 17, OwnAuraSize = 21 } },
         },
     },
     collapsed = { Interface = true },   -- свёрнутые группы в списке
@@ -170,6 +201,11 @@ ret_TweaksLiteDB = {
   репозитория Gethe/wow-ui-source, Retail — в ветке `live`. Шаблоны окна
   (`ButtonFrameTemplate_HidePortrait`, `MinimalCheckboxTemplate`, `SetTitle`,
   `RELOADUI`) есть в обоих.
+- Ползунок настройки — `MinimalSliderWithSteppersTemplate`, как в окне Settings
+  Retail, значение справа (`MinimalSliderWithSteppersMixin.Label.Right`). Шаблон
+  одинаковый в Retail и Forever. Колбэк `OnValueChanged` приходит и тогда, когда
+  значение ставит сам код, поэтому окно сохраняет значение, только если оно
+  отличается от сохранённого.
 - Кнопка «+/−» у группы — те же текстуры, что в списке Settings:
   `Interface\Buttons\UI-PlusButton-*` и `UI-MinusButton-*`.
 - Кнопка отката — атлас `common-icon-undo`, им же помечена кнопка Undo
